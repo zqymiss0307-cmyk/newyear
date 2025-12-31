@@ -1,0 +1,900 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>新年庆祝</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=ZCOOL+QingKe+HuangYou&display=swap">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent; /* 移除点击高亮 */
+        }
+
+        body {
+            font-family: 'ZCOOL QingKe HuangYou', monospace;
+            background: #000; /* 设置黑色背景作为备用 */
+            overflow: hidden;
+            height: 100vh;
+            position: relative;
+            cursor: pointer;
+            touch-action: manipulation; /* 优化触摸响应 */
+        }
+
+        /* 自定义图片背景 - 确保始终显示且不被暗化 */
+        .custom-background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url('./images/absl.jpg'); /* 您自己提供的图片路径 */
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            z-index: 0; /* 设置为0确保在最底层 */
+        }
+
+        /* 移动端优化：简化画布层级 */
+        #lanterns,
+        #fireworks {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        #lanterns { z-index: 2; }
+        #fireworks { z-index: 1; }
+
+        /* 星空背景 - 移动端减少星星数量 */
+        #sky {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 3;
+        }
+
+        /* 文字容器 - 移动端优化 */
+        .text-container {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 10;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* 艺术文字样式 - 移动端响应式字体 */
+        .art-text {
+            position: absolute;
+            font-family: 'Ma Shan Zheng', cursive;
+            font-weight: bold;
+            text-align: center;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.7s ease;
+            white-space: nowrap;
+            font-size: clamp(4rem, 20vw, 12rem); /* 使用clamp实现响应式字体 */
+            text-shadow:
+                0 0 20px rgba(255, 215, 0, 0.8),
+                0 0 40px rgba(255, 215, 0, 0.6),
+                0 0 60px rgba(255, 215, 0, 0.4);
+            padding: 0 20px; /* 添加内边距防止溢出 */
+        }
+
+        /* 移动端优化：简化渐变效果 */
+        .art-text-0 { color: #FFD700; }
+        .art-text-1 { color: #4CAF50; }
+        .art-text-2 { color: #FF6B6B; }
+        .art-text-3 { color: #4A90E2; }
+        .art-text-4 { color: #FF4081; }
+
+        /* 移除渐变背景（移动端性能优化） */
+        .art-text-0,
+        .art-text-1,
+        .art-text-2,
+        .art-text-3,
+        .art-text-4 {
+            -webkit-background-clip: initial;
+            -webkit-text-fill-color: initial;
+            background-clip: initial;
+            background: none;
+        }
+
+        /* 新年快乐链接 - 移动端优化 */
+        .new-year-link {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 0;
+            color: transparent;
+            text-decoration: none;
+            pointer-events: none;
+            z-index: 20;
+            width: min(800px, 90vw); /* 限制最大宽度 */
+            height: min(200px, 40vh); /* 限制最大高度 */
+        }
+
+        .new-year-link.active {
+            pointer-events: auto;
+        }
+
+        /* 控制面板 - 移动端底部居中 */
+        .controls {
+            position: fixed;
+            bottom: max(20px, env(safe-area-inset-bottom)); /* 安全区域适配 */
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            flex-direction: row; /* 改为水平排列 */
+            gap: 10px;
+            z-index: 1000;
+            padding: 0 20px;
+            width: 100%;
+            justify-content: center;
+        }
+
+        .control-btn {
+            padding: 12px 16px; /* 增大触摸区域 */
+            background: rgba(0, 0, 0, 0.85);
+            color: white;
+            border: 2px solid rgba(76, 175, 80, 0.5);
+            border-radius: 12px;
+            cursor: pointer;
+            font-family: 'Ma Shan Zheng', cursive;
+            font-size: 0.95rem;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            min-width: 100px;
+            justify-content: center;
+            -webkit-user-select: none;
+            user-select: none;
+            touch-action: manipulation;
+            backdrop-filter: blur(5px); /* 添加背景模糊效果 */
+        }
+
+        .control-btn:hover {
+            background: rgba(76, 175, 80, 0.2);
+            transform: scale(1.05);
+        }
+
+        /* 孔明灯样式美化 */
+        .lanternContainer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 2;
+            pointer-events: none;
+        }
+
+        /* 隐藏愿望相关元素 */
+        .name, .gradient, #wish {
+            display: none !important;
+            visibility: hidden !important;
+            opacity: 0 !important;
+        }
+
+        /* 移动端专用优化 */
+        @media (max-width: 768px) {
+            .controls {
+                bottom: max(10px, env(safe-area-inset-bottom));
+                padding: 0 15px;
+            }
+
+            .control-btn {
+                padding: 10px 14px;
+                font-size: 0.9rem;
+                min-width: 90px;
+                border-radius: 10px;
+            }
+
+            .art-text {
+                font-size: clamp(3.5rem, 18vw, 9rem);
+            }
+
+            .new-year-link {
+                width: min(500px, 85vw);
+                height: min(150px, 35vh);
+            }
+        }
+
+        @media (max-width: 480px) {
+            /* 小屏幕进一步优化 */
+            body {
+                cursor: default; /* 小屏幕使用默认光标 */
+            }
+
+            .controls {
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 8px;
+                padding: 0 10px;
+            }
+
+            .control-btn {
+                padding: 8px 12px;
+                font-size: 0.85rem;
+                min-width: 85px;
+                flex: 0 0 auto;
+            }
+
+            .art-text {
+                font-size: clamp(3rem, 16vw, 6rem);
+                padding: 0 15px;
+            }
+
+            .new-year-link {
+                width: min(400px, 80vw);
+                height: min(120px, 30vh);
+            }
+        }
+
+        /* 横屏优化 */
+        @media (orientation: landscape) and (max-height: 500px) {
+            .controls {
+                bottom: 5px;
+                gap: 6px;
+            }
+
+            .control-btn {
+                padding: 6px 10px;
+                font-size: 0.8rem;
+                min-width: 80px;
+            }
+
+            .art-text {
+                font-size: clamp(2.5rem, 15vw, 5rem);
+            }
+        }
+
+        /* 深色模式支持 */
+        @media (prefers-color-scheme: dark) {
+            .control-btn {
+                background: rgba(20, 20, 30, 0.9);
+                border-color: rgba(76, 175, 80, 0.6);
+            }
+        }
+
+        /* 性能优化：减少动画复杂度 */
+        @media (prefers-reduced-motion: reduce) {
+            .art-text,
+            .control-btn,
+            #lantern {
+                transition: none !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 自定义图片背景 -->
+    <div class="custom-background"></div>
+
+    <!-- 孔明灯画布 -->
+    <svg id="lanterns" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+        <defs>
+            <!-- 发光滤镜 -->
+            <filter id="lantern-glow" x="-50%" y="-50%" width="200%" height="200%">
+                <feGaussianBlur stdDeviation="4" result="blur"/>
+                <feMerge>
+                    <feMergeNode in="blur"/>
+                    <feMergeNode in="SourceGraphic"/>
+                </feMerge>
+            </filter>
+
+            <!-- 灯笼主体渐变 -->
+            <linearGradient id="lantern-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#FFD700" stop-opacity="1"/>
+                <stop offset="50%" stop-color="#FF8C00" stop-opacity="0.9"/>
+                <stop offset="100%" stop-color="#FF4500" stop-opacity="0.8"/>
+            </linearGradient>
+
+            <!-- 灯笼顶部渐变 -->
+            <linearGradient id="lantern-top-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stop-color="#8B4513" stop-opacity="1"/>
+                <stop offset="50%" stop-color="#A0522D" stop-opacity="0.9"/>
+                <stop offset="100%" stop-color="#8B4513" stop-opacity="1"/>
+            </linearGradient>
+
+            <!-- 灯笼装饰符号 -->
+            <g id="lantern-decoration">
+                <!-- 福字（新年祝福符号） -->
+                <g id="fu-symbol">
+                    <rect x="-5" y="-15" width="10" height="30" fill="#FF0000" rx="2"/>
+                    <text x="0" y="5" text-anchor="middle" fill="#FFD700" font-family="'Ma Shan Zheng', cursive" font-size="20" font-weight="bold">福</text>
+                </g>
+
+                <!-- 吉祥符号 -->
+                <g id="lucky-symbol">
+                    <circle cx="0" cy="0" r="8" fill="none" stroke="#4CAF50" stroke-width="2"/>
+                    <path d="M-5,0 L5,0 M0,-5 L0,5" stroke="#4CAF50" stroke-width="1.5"/>
+                    <circle cx="0" cy="0" r="2" fill="#4CAF50"/>
+                </g>
+            </g>
+
+            <!-- 美化的孔明灯形状 -->
+            <g id="lantern">
+                <!-- 灯笼顶部提手 -->
+                <g class="lantern-top">
+                    <rect x="-8" y="-45" width="16" height="10" rx="4" fill="url(#lantern-top-gradient)"/>
+                    <rect x="-5" y="-35" width="10" height="5" rx="2" fill="#A0522D"/>
+                </g>
+
+                <!-- 灯笼主体 -->
+                <g class="lantern-body" filter="url(#lantern-glow)">
+                    <!-- 灯笼外部形状 -->
+                    <path d="M-20 -30
+                             C-20 -35, -10 -40, 0 -40
+                             C10 -40, 20 -35, 20 -30
+                             L20 25
+                             C20 30, 10 35, 0 35
+                             C-10 35, -20 30, -20 25
+                             Z"
+                          fill="url(#lantern-gradient)"
+                          stroke="#FF8C00"
+                          stroke-width="2"/>
+
+                    <!-- 灯笼骨架装饰线 -->
+                    <g class="lantern-frame">
+                        <!-- 垂直装饰线 -->
+                        <line x1="-15" y1="-25" x2="-15" y2="20" stroke="#FFA500" stroke-width="1" stroke-dasharray="3,2"/>
+                        <line x1="0" y1="-30" x2="0" y2="25" stroke="#FFA500" stroke-width="1.2"/>
+                        <line x1="15" y1="-25" x2="15" y2="20" stroke="#FFA500" stroke-width="1" stroke-dasharray="3,2"/>
+
+                        <!-- 水平装饰线 -->
+                        <ellipse cx="0" cy="-27" rx="18" ry="2" fill="none" stroke="#FFA500" stroke-width="1"/>
+                        <ellipse cx="0" cy="-15" rx="16" ry="1.5" fill="none" stroke="#FFA500" stroke-width="0.8" stroke-dasharray="2,2"/>
+                        <ellipse cx="0" cy="0" rx="17" ry="1.8" fill="none" stroke="#FFA500" stroke-width="1"/>
+                        <ellipse cx="0" cy="15" rx="16" ry="1.5" fill="none" stroke="#FFA500" stroke-width="0.8" stroke-dasharray="2,2"/>
+                        <ellipse cx="0" cy="27" rx="18" ry="2" fill="none" stroke="#FFA500" stroke-width="1"/>
+                    </g>
+
+                    <!-- 灯笼装饰符号 -->
+                    <use xlink:href="#fu-symbol" x="0" y="-10"/>
+                    <use xlink:href="#lucky-symbol" x="-12" y="5" transform="scale(0.8)"/>
+                    <use xlink:href="#lucky-symbol" x="12" y="5" transform="scale(0.8)"/>
+
+                    <!-- 灯笼内光晕 -->
+                    <ellipse cx="0" cy="0" rx="10" ry="15" fill="#FFF59D" opacity="0.3" filter="url(#lantern-glow)"/>
+                </g>
+
+                <!-- 灯笼底部装饰 -->
+                <g class="lantern-bottom">
+                    <!-- 灯笼底部边缘 -->
+                    <ellipse cx="0" cy="30" rx="22" ry="4" fill="#8B4513" stroke="#5D4037" stroke-width="1"/>
+
+                    <!-- 流苏装饰 -->
+                    <g class="lantern-tassel">
+                        <!-- 中心流苏 -->
+                        <path d="M0,30 C2,40 5,45 0,50 C-5,45 -2,40 0,30" fill="#FF6347"/>
+                        <!-- 流苏线条 -->
+                        <g class="tassel-lines">
+                            <line x1="-8" y1="32" x2="-8" y2="38" stroke="#FF6347" stroke-width="1"/>
+                            <line x1="-4" y1="32" x2="-4" y2="40" stroke="#FF6347" stroke-width="1"/>
+                            <line x1="0" y1="32" x2="0" y2="42" stroke="#FF6347" stroke-width="1.2"/>
+                            <line x1="4" y1="32" x2="4" y2="40" stroke="#FF6347" stroke-width="1"/>
+                            <line x1="8" y1="32" x2="8" y2="38" stroke="#FF6347" stroke-width="1"/>
+                        </g>
+
+                        <!-- 流苏珠子 -->
+                        <circle cx="-6" cy="44" r="1.5" fill="#FFD700"/>
+                        <circle cx="0" cy="46" r="2" fill="#FFD700"/>
+                        <circle cx="6" cy="44" r="1.5" fill="#FFD700"/>
+                    </g>
+                </g>
+
+                <!-- 隐藏文字区域 -->
+                <foreignObject x="-20" y="-40" width="40" height="80" style="display: none;">
+                    <div class="name" xmlns="http://www.w3.org/1999/xhtml">
+                        <span class="gradient" style="display: none;"></span>
+                    </div>
+                </foreignObject>
+            </g>
+        </defs>
+        <g class="lanternContainer"></g>
+    </svg>
+
+    <!-- 烟花画布 -->
+    <canvas id="fireworks"></canvas>
+
+    <!-- 星空背景 -->
+    <div id="sky"></div>
+
+    <!-- 数字和文字容器 -->
+    <div class="text-container" id="text-container"></div>
+
+    <!-- 新年快乐链接 -->
+    <a href="./second.html" class="new-year-link" id="new-year-link"></a>
+
+    <!-- 控制面板 -->
+    <div class="controls">
+        <button id="toggle-music" class="control-btn">
+            <span class="music-icon">🎵</span> 音乐
+        </button>
+        <button id="toggle-fireworks" class="control-btn">
+            <span class="fireworks-icon">🎆</span> 烟花
+        </button>
+        <button id="restart-countdown" class="control-btn">
+            <span class="reset-icon">⏱️</span> 重新开始
+        </button>
+    </div>
+
+    <!-- 背景音乐 - 改为您自己的MP3文件 -->
+    <audio id="bg-music" loop preload="metadata">
+    <source src="./audio/abs.mp3" type="audio/mpeg">
+    您的浏览器不支持音频元素。
+</audio>
+    <script src="./js/utils.js"></script>
+    <script src="./js/tinycolor.js"></script>
+    <script src="./js/sky.js"></script>
+
+    <!-- 加载孔明灯相关JS -->
+    <script src="./js/wishes.js"></script>
+    <script src="./js/lantern.js"></script>
+
+    <!-- 加载烟花JS -->
+    <script src="./js/fireworks.js"></script>
+
+    <script>
+        // 增加孔明灯数量
+        (function() {
+            // 默认孔明灯数量配置
+            const LANTERN_COUNT = {
+                desktop: 50, // 电脑端增加更多孔明灯
+                mobile: 30,  // 移动端增加孔明灯数量
+                tablet: 40   // 平板设备
+            };
+
+            // 检测设备类型
+            function getLanternCount() {
+                if (isMobile()) {
+                    if (window.innerWidth <= 480) {
+                        return LANTERN_COUNT.mobile;
+                    } else {
+                        return LANTERN_COUNT.tablet;
+                    }
+                }
+                return LANTERN_COUNT.desktop;
+            }
+
+            // 如果是移动端，增加孔明灯数量
+            if (isMobile()) {
+                const count = getLanternCount();
+                if (window.WISHES && window.WISHES.length > count) {
+                    // 使用更多的愿望来创建更多孔明灯
+                    window.WISHES = window.WISHES.slice(0, count);
+                } else if (window.WISHES && window.WISHES.length < count) {
+                    // 如果愿望数量不足，复制一些来增加数量
+                    const originalCount = window.WISHES.length;
+                    const needed = count - originalCount;
+                    for (let i = 0; i < needed; i++) {
+                        const randomWish = window.WISHES[Math.floor(Math.random() * originalCount)];
+                        window.WISHES.push(randomWish);
+                    }
+                }
+            } else {
+                // 桌面端增加更多孔明灯
+                const count = getLanternCount();
+                if (window.WISHES && window.WISHES.length > count) {
+                    window.WISHES = window.WISHES.slice(0, count);
+                } else if (window.WISHES && window.WISHES.length < count) {
+                    const originalCount = window.WISHES.length;
+                    const needed = count - originalCount;
+                    for (let i = 0; i < needed; i++) {
+                        const randomWish = window.WISHES[Math.floor(Math.random() * originalCount)];
+                        window.WISHES.push(randomWish);
+                    }
+                }
+            }
+        })();
+
+        // 页面状态
+        let currentPhase = 0;
+        let isAnimationRunning = true;
+        let restartRequested = false;
+
+        // DOM元素
+        const textContainer = document.getElementById('text-container');
+        const newYearLink = document.getElementById('new-year-link');
+        const toggleMusicBtn = document.getElementById('toggle-music');
+        const toggleFireworksBtn = document.getElementById('toggle-fireworks');
+        const restartCountdownBtn = document.getElementById('restart-countdown');
+        const bgMusic = document.getElementById('bg-music');
+
+        // 创建艺术文字
+        function createArtText(text, styleClass) {
+            const artText = document.createElement('div');
+            artText.className = `art-text ${styleClass}`;
+            artText.textContent = text;
+            return artText;
+        }
+
+        // 显示艺术文字（移动端优化）
+        function showArtText(text, styleClass, callback = null) {
+            // 清空容器
+            while (textContainer.firstChild) {
+                textContainer.removeChild(textContainer.firstChild);
+            }
+
+            const artText = createArtText(text, styleClass);
+            textContainer.appendChild(artText);
+
+            // 移动端使用较短的动画时间
+            const transitionTime = isMobile() ? 500 : 700;
+
+            // 延迟后显示艺术文字
+            setTimeout(() => {
+                artText.style.opacity = '1';
+
+                if (callback) {
+                    // 显示后隐藏
+                    setTimeout(() => {
+                        artText.style.opacity = '0';
+
+                        // 隐藏后移除并执行回调
+                        setTimeout(() => {
+                            if (artText.parentNode) {
+                                artText.parentNode.removeChild(artText);
+                            }
+                            callback();
+                        }, transitionTime);
+                    }, transitionTime);
+                }
+            }, 100);
+        }
+
+        // 开始倒计时（移动端优化）
+        function startCountdown() {
+            currentPhase = 0;
+            let count = 10;
+
+            function showCountdownNumber() {
+                if (count < 0 || restartRequested) return;
+
+                if (count > 0) {
+                    const styleClass = `art-text-${count % 5}`;
+                    showArtText(count.toString(), styleClass, () => {
+                        count--;
+                        setTimeout(showCountdownNumber, 50); // 移动端增加延迟减少性能压力
+                    });
+                } else {
+                    show2026();
+                }
+            }
+
+            showCountdownNumber();
+        }
+
+        // 显示2026艺术字体
+        function show2026() {
+            if (restartRequested) return;
+
+            showArtText('2026', 'art-text-0', () => {
+                showArtTextSequence();
+            });
+        }
+
+        // 显示艺术文字序列（移动端优化）
+        function showArtTextSequence() {
+            const texts = [
+                {text: '平安喜乐', style: 'art-text-1'},
+                {text: '万事顺遂', style: 'art-text-2'},
+                {text: '新年快乐', style: 'art-text-3'}
+            ];
+
+            let index = 0;
+
+            function showNextArtText() {
+                if (index >= texts.length || restartRequested) return;
+
+                const textObj = texts[index];
+                showArtText(textObj.text, textObj.style, () => {
+                    index++;
+                    if (index < texts.length) {
+                        setTimeout(showNextArtText, 100);
+                    } else {
+                        showFinalNewYearText();
+                    }
+                });
+            }
+
+            showNextArtText();
+        }
+
+        // 显示最终新年快乐并激活链接（移动端优化）
+        function showFinalNewYearText() {
+            if (restartRequested) return;
+
+            while (textContainer.firstChild) {
+                const child = textContainer.firstChild;
+                if (child.pulseInterval) {
+                    clearInterval(child.pulseInterval);
+                }
+                textContainer.removeChild(child);
+            }
+
+            const finalText = createArtText('新年快乐', 'art-text-4');
+            textContainer.appendChild(finalText);
+
+            // 激活新年快乐链接
+            newYearLink.classList.add('active');
+
+            // 设置链接位置和大小
+            const textRect = finalText.getBoundingClientRect();
+            const scaleFactor = isMobile() ? 0.8 : 1; // 移动端缩放因子
+            newYearLink.style.width = `${(textRect.width + 100) * scaleFactor}px`;
+            newYearLink.style.height = `${(textRect.height + 100) * scaleFactor}px`;
+            newYearLink.style.left = `${textRect.left - 50 * scaleFactor + window.scrollX}px`;
+            newYearLink.style.top = `${textRect.top - 50 * scaleFactor + window.scrollY}px`;
+            newYearLink.style.transform = 'translate(0, 0)';
+
+            // 显示最终文字
+            setTimeout(() => {
+                finalText.style.opacity = '1';
+
+                // 移动端减少脉动频率
+                const pulseIntervalTime = isMobile() ? 1000 : 700;
+                let pulseScale = 1;
+                const pulseInterval = setInterval(() => {
+                    pulseScale = pulseScale === 1 ? 1.03 : 1; // 移动端减小缩放幅度
+                    finalText.style.transform = `translate(-50%, -50%) scale(${pulseScale})`;
+                }, pulseIntervalTime);
+
+                finalText.pulseInterval = pulseInterval;
+            }, 100);
+        }
+
+        // 重新开始倒计时
+        function restartCountdown() {
+            restartRequested = true;
+
+            while (textContainer.firstChild) {
+                const child = textContainer.firstChild;
+                if (child.pulseInterval) {
+                    clearInterval(child.pulseInterval);
+                }
+                textContainer.removeChild(child);
+            }
+
+            newYearLink.classList.remove('active');
+            newYearLink.style.width = isMobile() ? '85vw' : '800px';
+            newYearLink.style.height = isMobile() ? '30vh' : '200px';
+            newYearLink.style.left = '50%';
+            newYearLink.style.top = '50%';
+            newYearLink.style.transform = 'translate(-50%, -50%)';
+
+            setTimeout(() => {
+                restartRequested = false;
+                startCountdown();
+            }, 100);
+        }
+
+        // 音乐控制（移动端优化）
+        function setupMusicControls() {
+            let isMusicPlaying = false;
+
+            toggleMusicBtn.addEventListener('click', function() {
+                if (isMusicPlaying) {
+                    bgMusic.pause();
+                    toggleMusicBtn.innerHTML = '<span class="music-icon">🔇</span> 音乐';
+                } else {
+                    // 移动端需要用户交互才能播放音频
+                    const playPromise = bgMusic.play();
+                    if (playPromise !== undefined) {
+                        playPromise.catch(e => {
+                            console.log("音乐播放被阻止");
+                            // 显示提示
+                            toggleMusicBtn.innerHTML = '<span class="music-icon">❌</span> 点击播放';
+                            setTimeout(() => {
+                                toggleMusicBtn.innerHTML = '<span class="music-icon">🎵</span> 音乐';
+                            }, 2000);
+                        }).then(() => {
+                            toggleMusicBtn.innerHTML = '<span class="music-icon">🎵</span> 音乐';
+                        });
+                    }
+                }
+                isMusicPlaying = !isMusicPlaying;
+            });
+        }
+
+        // 烟花控制（移动端优化）
+        function setupFireworksControls() {
+            let fireworksInstance = null;
+            let isFireworksRunning = true;
+
+            // 初始化烟花 - 移动端减少烟花数量
+            setTimeout(() => {
+                const dom = document.querySelector('#fireworks');
+                // 移动端减少烟花数量
+                const fireworkCount = isMobile() ? 8 : 24;
+                const options = {
+                    fps: isMobile() ? 30 : 45, // 移动端降低帧率
+                    useAnimationFrame: false,
+                    fireworkCount: fireworkCount,
+                    particleOptions: {
+                        size: isMobile() ? 12 : 18,
+                        speed: isMobile() ? 15 : 20,
+                        particleCount: isMobile() ? 60 : 100,
+                    },
+                    fireworkInterval: isMobile() ? 300 : 200,
+                };
+
+                try {
+                    fireworksInstance = new Fireworks(dom, options);
+                    fireworksInstance.start();
+                } catch (error) {
+                    console.log("烟花初始化失败:", error);
+                    toggleFireworksBtn.disabled = true;
+                    toggleFireworksBtn.innerHTML = '<span class="fireworks-icon">❌</span> 烟花';
+                    return;
+                }
+
+                // 移动端触摸事件
+                dom.addEventListener('touchstart', (event) => {
+                    if (event.touches.length > 0 && fireworksInstance) {
+                        event.preventDefault(); // 防止滚动
+                        const touch = event.touches[0];
+                        fireworksInstance.createFirework(
+                            touch.clientX,
+                            touch.clientY
+                        );
+                    }
+                }, { passive: false });
+
+                // 自动添加更多烟花 - 移动端减少频率
+                setInterval(() => {
+                    if (fireworksInstance && isFireworksRunning) {
+                        const count = isMobile() ? 1 : 3;
+                        for (let i = 0; i < count; i++) {
+                            setTimeout(() => {
+                                const x = random(100, window.innerWidth - 100);
+                                const y = random(100, window.innerHeight - 100);
+                                fireworksInstance.createFirework(x, y);
+                            }, i * 300);
+                        }
+                    }
+                }, isMobile() ? 8000 : 5000);
+
+            }, 1000);
+
+            toggleFireworksBtn.addEventListener('click', function() {
+                if (fireworksInstance) {
+                    if (isFireworksRunning) {
+                        fireworksInstance.pause();
+                        toggleFireworksBtn.innerHTML = '<span class="fireworks-icon">🎇</span> 烟花';
+                    } else {
+                        fireworksInstance.start();
+                        toggleFireworksBtn.innerHTML = '<span class="fireworks-icon">🎆</span> 烟花';
+                    }
+                    isFireworksRunning = !isFireworksRunning;
+                }
+            });
+        }
+
+        // 移动设备检测
+        function isMobile() {
+            const toMatch = [
+                /Android/i,
+                /webOS/i,
+                /iPhone/i,
+                /iPad/i,
+                /iPod/i,
+                /BlackBerry/i,
+                /Windows Phone/i,
+            ];
+            return toMatch.some((toMatchItem) => {
+                return navigator.userAgent.match(toMatchItem);
+            }) || window.innerWidth <= 768;
+        }
+
+        // 页面加载完成后初始化（移动端优化）
+        document.addEventListener('DOMContentLoaded', function() {
+            // 移动端优化：预加载关键资源
+            if ('connection' in navigator && navigator.connection.saveData) {
+                console.log("省流量模式开启，减少特效");
+            }
+
+            // 初始化音乐控制
+            setupMusicControls();
+
+            // 初始化烟花控制
+            setupFireworksControls();
+
+            // 重新开始按钮
+            restartCountdownBtn.addEventListener('click', restartCountdown);
+
+            // 移动端触摸事件支持
+            document.body.addEventListener('touchstart', function initMobile() {
+                // 移动端首次触摸时播放音乐
+                if (bgMusic.paused) {
+                    bgMusic.play().catch(e => {
+                        console.log("自动播放被阻止");
+                    });
+                }
+                document.body.removeEventListener('touchstart', initMobile);
+            }, { once: true });
+
+            // 移动端点击事件
+            document.body.addEventListener('click', function initClick() {
+                if (bgMusic.paused) {
+                    bgMusic.play().catch(e => {
+                        console.log("自动播放被阻止");
+                    });
+                }
+                document.body.removeEventListener('click', initClick);
+            }, { once: true });
+
+            // 开始倒计时
+            setTimeout(startCountdown, 500);
+
+            // 移动端性能优化：页面隐藏时暂停动画
+            document.addEventListener('visibilitychange', function() {
+                if (document.hidden) {
+                    // 页面隐藏时暂停音乐和烟花
+                    if (bgMusic && !bgMusic.paused) bgMusic.pause();
+
+                    // 这里可以添加烟花暂停逻辑
+                }
+            });
+
+            // 页面关闭时清理
+            window.addEventListener('beforeunload', function() {
+                const children = textContainer.children;
+                for (let i = 0; i < children.length; i++) {
+                    if (children[i].pulseInterval) {
+                        clearInterval(children[i].pulseInterval);
+                    }
+                }
+            });
+
+            // 移动端横竖屏切换处理
+            window.addEventListener('resize', function() {
+                // 防止在移动端频繁触发
+                clearTimeout(this.resizeTimer);
+                this.resizeTimer = setTimeout(function() {
+                    // 重新计算链接位置
+                    if (newYearLink.classList.contains('active')) {
+                        const finalText = document.querySelector('.art-text');
+                        if (finalText) {
+                            const textRect = finalText.getBoundingClientRect();
+                            newYearLink.style.width = `${textRect.width + 100}px`;
+                            newYearLink.style.height = `${textRect.height + 100}px`;
+                            newYearLink.style.left = `${textRect.left - 50 + window.scrollX}px`;
+                            newYearLink.style.top = `${textRect.top - 50 + window.scrollY}px`;
+                        }
+                    }
+                }, 250);
+            });
+        });
+
+        // 移动端防抖函数
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+    </script>
+</body>
+</html>
